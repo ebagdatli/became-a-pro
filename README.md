@@ -1,4 +1,4 @@
-# BecomeAPro
+# ActiMetric - AI 
 
 ## Ana Amaç
 
