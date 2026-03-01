@@ -20,3 +20,6 @@ env/
 .DS_Store
 *.xlsx
 *.ipynb_checkpoints/
+
+# Hugging Face Space clone (separate repo)
+ActiMetric-AI/
