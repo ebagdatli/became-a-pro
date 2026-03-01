@@ -11,11 +11,9 @@ env/
 
 # Data and models – download from Kaggle (see each project's README)
 **/data/raw/*
-!**/data/raw/.gitkeep
 **/data/processed/*
-!**/data/processed/.gitkeep
 **/models/*
-!**/models/.gitkeep
+**/.gitkeep
 
 # IDE / OS
 .idea/

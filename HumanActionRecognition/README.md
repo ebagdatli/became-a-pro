@@ -1,50 +1,46 @@
 # Human Action Recognition
 
-**Problem type**: Image classification (15 action classes)  
-**Target**: Predict action label from a single image  
-**Metric**: Accuracy  
-**Dataset**: Training_set.csv (filename, label) + train/ and test/ image folders
+**Kaggle**: [Human Action Recognition HAR Dataset](https://www.kaggle.com/datasets/meetnagadia/human-action-recognition)
 
-### Getting the data
+Image classification: 15 action classes. Metric: Accuracy.
 
-Data and models are not in the repo. Download from Kaggle and place files under `data/Human Action Recognition/` or `data/raw/`:
+## Getting the data
 
-- **Kaggle**: Search **"Human Action Recognition"** or use [Human Action Recognition HAR Dataset](https://www.kaggle.com/datasets/meetnagadia/human-action-recognition) — place `Training_set.csv`, `Testing_set.csv`, and the `train/` and `test/` image folders in the same directory.
+Download from Kaggle and place under `data/Human Action Recognition/` or `data/raw/`:
 
-## Data layout
+- `Training_set.csv`, `Testing_set.csv`
+- `train/` – training images
+- `test/` – test images
 
-Place the full dataset under one of:
+## Project structure
 
-- `data/Human Action Recognition/`  
-  - `Training_set.csv`, `Testing_set.csv`  
-  - **`train/`** – folder of training images (e.g. `Image_1.jpg`, …)  
-  - **`test/`** – folder of test images  
-- or `data/raw/` with the same four items
+```
+HumanActionRecognition/
+├── data/
+│   ├── raw/          # or Human Action Recognition/ – CSVs + train/, test/
+│   └── processed/    # cleaned/transformed artifacts
+├── models/           # final_model.keras, final_model.pkl, categories.pkl
+├── notebooks/
+│   └── main.ipynb    # final pipeline (load → train → predict)
+├── src/
+│   ├── data_loader.py
+│   ├── preprocessing.py
+│   ├── train.py
+│   └── predict.py
+├── app/
+│   └── streamlit_app.py
+└── requirements.txt
+```
 
-If you only have the CSVs, add the `train/` and `test/` image folders from the Kaggle dataset (e.g. *Human Action Recognition HAR Dataset*) into the same directory.
-
-## Run pipeline
-
-From repo root:
+## Run
 
 ```bash
+# From repo root
 python run_competition.py HumanActionRecognition
 ```
 
-This runs `notebooks/main.ipynb`: loads data, trains a CNN, saves the model under `models/`.
-
-## Streamlit app
+Streamlit demo:
 
 ```bash
 streamlit run HumanActionRecognition/app/streamlit_app.py
 ```
-
-Upload an image to get the predicted action class.
-
-## Project structure (MASTER_SPEC)
-
-- `data/raw/`, `data/processed/` – data
-- `notebooks/main.ipynb` – final pipeline
-- `models/` – `final_model.keras`, `final_model.pkl`, `categories.pkl`
-- `src/` – `data_loader`, `preprocessing`, `train`, `predict`
-- `app/streamlit_app.py` – demo UI
