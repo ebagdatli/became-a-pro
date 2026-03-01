@@ -29,7 +29,7 @@ def validate_model_folder(competition_path):
 
     files = os.listdir(models_path)
 
-    model_files = [f for f in files if f.endswith(".pkl")]
+    model_files = [f for f in files if f.endswith(".pkl") or f.endswith(".keras") or f.endswith(".h5")]
 
     if not model_files:
         print("WARNING: No model file found in models/ folder.")
@@ -61,7 +61,7 @@ def main():
         print("Notebook not found at notebooks/main.ipynb")
         sys.exit(1)
 
-    # Use project-specific kernel if available
+    # Use project-specific kernel if available (otherwise python3)
     kernel_map = {
         "ExercisePrediction": "exercise-prediction",
         "SmartAiCoach": "smart-ai-coach",
