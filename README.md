@@ -39,32 +39,49 @@ birden fazla referans proje incelenmiş, veri setleri kullanılmış ve modeller
 
 ---
 
-## Proje Yapısı
+## Demo
+
+**ActiMetric AI** -- Yapay zeka destekli gercek zamanli egzersiz takip uygulamasi Hugging Face Spaces uzerinde yayinda:
+
+[**ActiMetric AI - Hugging Face Space**](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+
+| | |
+|:---:|:---:|
+| ![Hero](assets/actimetric_hero.png) | ![Exercises](assets/actimetric_exercises.png) |
+| Modern UI - Hero Section | Desteklenen Egzersizler |
+
+---
+
+## Proje Yapisi
 
 ```
 BecomeAPro/
 ├── CalorieExpenditurePrediction/
 ├── ExercisePrediction/
+│   ├── app/                # Yerel Streamlit UI
+│   ├── src/                # Model egitimi & kamera demo
+│   ├── hf_space/           # Hugging Face Space deployment
+│   └── models/             # Egitilmis model dosyalari
 ├── FacialKeypointsDetection/
 ├── HumanActionRecognition/
 ├── LSTMExerciseClassificationPushUp/
 ├── SmartAICoach/
 ├── Yoga Pose Classification/
-├── run_competition.py    # Alt projelerin notebook'larını çalıştırır
+├── run_competition.py      # Alt projelerin notebook'larini calistirir
 └── README.md
 ```
 
 ---
 
-## Çalıştırma
+## Calistirma
 
-Belirli bir alt projeyi eğitmek için:
+Belirli bir alt projeyi egitmek icin:
 
 ```bash
-python run_competition.py <ProjeKlasörAdı>
+python run_competition.py <ProjeKlasorAdi>
 ```
 
-Örnek:
+Ornek:
 ```bash
 python run_competition.py ExercisePrediction
 python run_competition.py LSTMExerciseClassificationPushUp
