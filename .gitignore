@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+*.so
+.venv/
+venv/
+env/
+
+# Data and models – download from Kaggle (see each project's README)
+**/data/raw/*
+!**/data/raw/.gitkeep
+**/data/processed/*
+!**/data/processed/.gitkeep
+**/models/*
+!**/models/.gitkeep
+
+# IDE / OS
+.idea/
+.DS_Store
+*.xlsx
+*.ipynb_checkpoints/
