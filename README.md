@@ -4,15 +4,13 @@
 
 > **Canli Demo:** [https://huggingface.co/spaces/bagdatli/ActiMetric-AI](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
 
-## Ana Amaç
+## Proje Hakkinda
 
-Bu projenin temel hedefi, **anlık (real-time) kamera görüntüleri** ile hareketleri algılayıp:
+Yapay zeka destekli, gercek zamanli egzersiz tanimlama ve analiz platformu. Kameraniz araciligiyla vucut hareketlerinizi anlik olarak analiz eder.
 
-1. **Hangi egzersizlerin** yapıldığını tespit etmek (şınav, mekik, barfiks vb.)
-2. **Kaç tekrar** yapıldığını saymak
-3. Bu hareketlere dayanarak **yakılan kalori** miktarını hesaplamak
-
-olacak şekilde entegre bir sistem kurmaktır.
+- [x] **Egzersiz Tanimlama** -- Gercek zamanli kamera goruntusuyle sinav, mekik, squat, barfiks ve ziplama hareketlerini otomatik olarak tanir
+- [ ] **Tekrar Sayimi** -- Her egzersiz icin tekrar sayisini otomatik hesaplar *(v2)*
+- [ ] **Kalori Tahmini** -- Yapilan egzersiz turune ve tekrar sayisina gore yakilaN kaloriyi hesaplar *(v2)*
 
 ---
 
