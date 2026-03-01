@@ -61,8 +61,12 @@ def main():
         print("Notebook not found at notebooks/main.ipynb")
         sys.exit(1)
 
-    # ExercisePrediction uses xgboost etc. - use its venv kernel if available
-    kernel = "exercise-prediction" if competition_name == "ExercisePrediction" else "python3"
+    # Use project-specific kernel if available
+    kernel_map = {
+        "ExercisePrediction": "exercise-prediction",
+        "SmartAiCoach": "smart-ai-coach",
+    }
+    kernel = kernel_map.get(competition_name, "python3")
     run_notebook(notebook_path, competition_path, kernel_name=kernel)
     validate_model_folder(competition_path)
 
