@@ -3,14 +3,14 @@ import sys
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
-def run_notebook(notebook_path, working_dir):
+def run_notebook(notebook_path, working_dir, kernel_name="python3"):
     print(f"\nRunning notebook: {notebook_path}")
 
     with open(notebook_path) as f:
         nb = nbformat.read(f, as_version=4)
 
     # 2 hours per cell (CNN training can be slow on CPU)
-    ep = ExecutePreprocessor(timeout=7200, kernel_name="python3")
+    ep = ExecutePreprocessor(timeout=7200, kernel_name=kernel_name)
 
     try:
         ep.preprocess(nb, {'metadata': {'path': working_dir}})
@@ -61,7 +61,9 @@ def main():
         print("Notebook not found at notebooks/main.ipynb")
         sys.exit(1)
 
-    run_notebook(notebook_path, competition_path)
+    # ExercisePrediction uses xgboost etc. - use its venv kernel if available
+    kernel = "exercise-prediction" if competition_name == "ExercisePrediction" else "python3"
+    run_notebook(notebook_path, competition_path, kernel_name=kernel)
     validate_model_folder(competition_path)
 
     print("\nCompetition execution completed.")
