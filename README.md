@@ -1,5 +1,9 @@
 # ActiMetric - AI 
 
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-ActiMetric--AI-blue)](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+
+> **Canli Demo:** [https://huggingface.co/spaces/bagdatli/ActiMetric-AI](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+
 ## Ana Amaç
 
 Bu projenin temel hedefi, **anlık (real-time) kamera görüntüleri** ile hareketleri algılayıp:
