@@ -1,4 +1,4 @@
-# ActiMetric - AI 
+# NoPainNoGain
 
 [![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-ActiMetric--AI-blue)](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
 
@@ -57,7 +57,7 @@ birden fazla referans proje incelenmiş, veri setleri kullanılmış ve modeller
 ## Proje Yapisi
 
 ```
-BecomeAPro/
+NoPainNoGain/
 ├── CalorieExpenditurePrediction/
 ├── ExercisePrediction/
 │   ├── app/                # Yerel Streamlit UI
@@ -73,18 +73,3 @@ BecomeAPro/
 └── README.md
 ```
 
----
-
-## Calistirma
-
-Belirli bir alt projeyi egitmek icin:
-
-```bash
-python run_competition.py <ProjeKlasorAdi>
-```
-
-Ornek:
-```bash
-python run_competition.py ExercisePrediction
-python run_competition.py LSTMExerciseClassificationPushUp
-```
