@@ -59,7 +59,7 @@ birden fazla referans proje incelenmiş, veri setleri kullanılmış ve modeller
 ```
 NoPainNoGain/
 ├── CalorieExpenditurePrediction/
-├── ExercisePrediction/
+├── ExercisePrediction/          -> github.com/ebagdatli/no-pain-no-gain
 │   ├── app/                # Yerel Streamlit UI
 │   ├── src/                # Model egitimi & kamera demo
 │   ├── hf_space/           # Hugging Face Space deployment
@@ -72,4 +72,7 @@ NoPainNoGain/
 ├── run_competition.py      # Alt projelerin notebook'larini calistirir
 └── README.md
 ```
+
+> **ExercisePrediction** projesi bagimsiz bir repo olarak da gelistirilmektedir:
+> [github.com/ebagdatli/no-pain-no-gain](https://github.com/ebagdatli/no-pain-no-gain)
 
