@@ -4,6 +4,7 @@ Streamlit + WebRTC for in-browser real-time pose detection.
 """
 import json
 import logging
+import os
 import time
 import urllib.request
 from collections import Counter, deque
@@ -19,6 +20,11 @@ from joblib import load
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 from streamlit_webrtc import WebRtcMode, webrtc_streamer
+
+try:
+    from streamlit_webrtc import get_twilio_ice_servers
+except ImportError:
+    get_twilio_ice_servers = None
 
 logger = logging.getLogger(__name__)
 
@@ -361,12 +367,110 @@ div.stButton > button[data-testid="stBaseButton-primary"]:hover {
 ::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #3a3a52; }
 
+/* Camera Section */
+.cam-wrapper {
+    background: rgba(12,12,22,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin: 1.2rem auto 0;
+    max-width: 720px;
+    position: relative;
+    overflow: hidden;
+}
+.cam-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(0,212,170,0.15), transparent 40%, rgba(124,58,237,0.15));
+    z-index: 0;
+    pointer-events: none;
+}
+.cam-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+.cam-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #00d4aa;
+    box-shadow: 0 0 8px rgba(0,212,170,0.5);
+    animation: camPulse 2s ease-in-out infinite;
+}
+.cam-dot.off { background: #555; box-shadow: none; animation: none; }
+@keyframes camPulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%     { opacity: 0.5; transform: scale(0.85); }
+}
+.cam-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a0a0b8;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.cam-guide {
+    display: flex;
+    gap: 1.2rem;
+    margin: 1.2rem 0;
+    position: relative;
+    z-index: 1;
+}
+.cam-guide-step {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 1rem 0.8rem;
+    text-align: center;
+}
+.cam-guide-icon { font-size: 1.5rem; margin-bottom: 0.4rem; display: block; }
+.cam-guide-text { font-size: 0.78rem; color: #7a7a95; line-height: 1.4; }
+
 /* WebRTC component wrapper */
 iframe[title*="webrtc"] {
-    border: 1px solid rgba(255,255,255,0.055) !important;
-    border-radius: 16px !important;
-    background: rgba(18,18,30,0.65) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 14px !important;
+    background: rgba(10,10,20,0.9) !important;
 }
+
+/* Status Pill */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,212,170,0.08);
+    border: 1px solid rgba(0,212,170,0.25);
+    border-radius: 50px;
+    padding: 6px 16px;
+    color: #00d4aa;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+.status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #00d4aa;
+    animation: camPulse 1.5s ease-in-out infinite;
+}
+
+/* Troubleshoot Card */
+.trouble-card {
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.15);
+    border-radius: 14px;
+    padding: 1.1rem 1.4rem;
+    color: #f5c96a;
+    font-size: 0.84rem;
+    line-height: 1.65;
+    margin: 0.8rem 0;
+}
+.trouble-card strong { color: #fad683; }
 
 /* Onboarding Card */
 .onboard-card {
@@ -380,6 +484,31 @@ iframe[title*="webrtc"] {
 .onboard-card p { color: #7a7a95; font-size: 0.92rem; line-height: 1.6; }
 </style>
 """
+
+
+# ---------------------------------------------------------------------------
+# ICE / TURN configuration
+# ---------------------------------------------------------------------------
+
+
+def get_ice_config() -> dict:
+    """Return WebRTC ICE configuration with Twilio TURN servers when available,
+    falling back to Google STUN for local development."""
+    if get_twilio_ice_servers is not None:
+        try:
+            sid = os.environ.get("TWILIO_ACCOUNT_SID", "")
+            token = os.environ.get("TWILIO_AUTH_TOKEN", "")
+            if not sid:
+                sid = st.secrets.get("TWILIO_ACCOUNT_SID", "")
+            if not token:
+                token = st.secrets.get("TWILIO_AUTH_TOKEN", "")
+            if sid and token:
+                ice = get_twilio_ice_servers(twilio_sid=sid, twilio_token=token)
+                logger.info("Using Twilio TURN servers (%d entries)", len(ice))
+                return {"iceServers": ice}
+        except Exception as exc:
+            logger.warning("Twilio ICE fetch failed, falling back to STUN: %s", exc)
+    return {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 
 
 # ---------------------------------------------------------------------------
@@ -813,7 +942,7 @@ def render_camera_section(ml_model, encoder, scaler, model_type,
         <div class="cta-box">
             <div class="cta-t">Antrenmanina Basla</div>
             <div class="cta-d">
-                Kameranizi acarak yapay zeka destekli egzersiz takibine baslayin
+                START butonuna tiklayarak kameranizi acin ve egzersize baslayin
             </div>
         </div>
         """,
@@ -835,75 +964,51 @@ def render_camera_section(ml_model, encoder, scaler, model_type,
         ml_model, encoder, scaler, model_type, feature_columns, pose_landmarker,
     )
 
-    webrtc_ctx = webrtc_streamer(
-        key="exercise-detection",
-        mode=WebRtcMode.SENDRECV,
-        video_frame_callback=callback,
-        media_stream_constraints={
-            "video": {"width": {"ideal": 640}, "height": {"ideal": 480}},
-            "audio": False,
-        },
-        async_processing=True,
-        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-        translations={
-            "start": "Kamerayi Baslat",
-            "stop": "Kamerayi Durdur",
-            "select_device": "Cihaz Sec",
-        },
-    )
+    _pad_l, cam_col, _pad_r = st.columns([1, 6, 1])
+    with cam_col:
+        st.markdown(
+            """
+            <div class="cam-wrapper">
+                <div class="cam-header">
+                    <div class="cam-dot off" id="camDot"></div>
+                    <span class="cam-label">Kamera</span>
+                </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    st.markdown(
-        """
-        <script>
-        const observer = new MutationObserver(() => {
-            const iframes = document.querySelectorAll('iframe');
-            iframes.forEach(iframe => {
-                try {
-                    const doc = iframe.contentDocument || iframe.contentWindow.document;
-                    if (!doc || doc.getElementById('custom-webrtc-style')) return;
-                    const style = doc.createElement('style');
-                    style.id = 'custom-webrtc-style';
-                    style.textContent = `
-                        button {
-                            background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%) !important;
-                            border: none !important;
-                            border-radius: 12px !important;
-                            padding: 12px 32px !important;
-                            font-size: 1rem !important;
-                            font-weight: 600 !important;
-                            color: #080810 !important;
-                            cursor: pointer !important;
-                            letter-spacing: 0.5px !important;
-                            min-height: 48px !important;
-                            transition: all 0.3s ease !important;
-                        }
-                        button:hover {
-                            box-shadow: 0 6px 24px rgba(0,212,170,0.35) !important;
-                            transform: translateY(-1px) !important;
-                        }
-                        select {
-                            background: rgba(18,18,30,0.9) !important;
-                            border: 1px solid rgba(255,255,255,0.12) !important;
-                            border-radius: 10px !important;
-                            color: #e0e0e8 !important;
-                            padding: 8px 16px !important;
-                            font-size: 0.85rem !important;
-                        }
-                        video {
-                            border-radius: 12px !important;
-                        }
-                    `;
-                    doc.head.appendChild(style);
-                } catch(e) {}
-            });
-        });
-        observer.observe(document.body, {childList: true, subtree: true});
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
+        webrtc_ctx = webrtc_streamer(
+            key="exercise-detection",
+            mode=WebRtcMode.SENDRECV,
+            video_frame_callback=callback,
+            media_stream_constraints={
+                "video": {"width": {"ideal": 640}, "height": {"ideal": 480}},
+                "audio": False,
+            },
+            async_processing=True,
+            rtc_configuration=get_ice_config(),
+            translations={
+                "start": "START",
+                "stop": "STOP",
+                "select_device": "Kamera Sec",
+            },
+        )
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     if webrtc_ctx.state.playing:
+        with cam_col:
+            st.markdown(
+                """
+                <div style="text-align:center; margin-top:0.6rem;">
+                    <div class="status-pill">
+                        <span class="status-dot"></span>
+                        Kamera aktif &mdash; Egzersize baslayin
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         if rep_state["start_time"] is None:
             rep_state["start_time"] = time.time()
         st.session_state["rep_state_snapshot"] = {
@@ -911,12 +1016,40 @@ def render_camera_section(ml_model, encoder, scaler, model_type,
             "exercise_reps": dict(rep_state["exercise_reps"]),
             "start_time": rep_state["start_time"],
         }
-    elif st.session_state.get("rep_state_snapshot"):
-        snap = st.session_state["rep_state_snapshot"]
-        if snap["reps"] > 0 and snap["start_time"]:
-            elapsed = time.time() - snap["start_time"]
-            _render_workout_summary(snap, elapsed)
-            st.session_state["rep_state_snapshot"] = None
+    else:
+        with cam_col:
+            st.markdown(
+                """
+                <div class="cam-guide">
+                    <div class="cam-guide-step">
+                        <span class="cam-guide-icon">&#x1F4F7;</span>
+                        <span class="cam-guide-text">Kamera iznini<br>onaylayin</span>
+                    </div>
+                    <div class="cam-guide-step">
+                        <span class="cam-guide-icon">&#x1F9CD;</span>
+                        <span class="cam-guide-text">Tam vucut<br>gorunumunde durun</span>
+                    </div>
+                    <div class="cam-guide-step">
+                        <span class="cam-guide-icon">&#x1F3CB;</span>
+                        <span class="cam-guide-text">Egzersizinizi<br>yapmaya baslayin</span>
+                    </div>
+                </div>
+                <div class="trouble-card" style="text-align:center;">
+                    <strong>Baglanti sorunu mu yasiyorsunuz?</strong><br>
+                    Tarayicinizin kamera erisim izni verdiginizden emin olun.
+                    Chrome veya Edge kullanmaniz onerilir.
+                    Sorun devam ederse sayfayi yenileyip tekrar deneyin.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        if st.session_state.get("rep_state_snapshot"):
+            snap = st.session_state["rep_state_snapshot"]
+            if snap["reps"] > 0 and snap["start_time"]:
+                elapsed = time.time() - snap["start_time"]
+                _render_workout_summary(snap, elapsed)
+                st.session_state["rep_state_snapshot"] = None
 
 
 def _render_workout_summary(snap, elapsed_seconds):

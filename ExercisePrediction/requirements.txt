@@ -5,5 +5,7 @@ xgboost>=1.5
 torch>=1.10
 joblib>=1.1
 streamlit>=1.20
+streamlit-webrtc>=0.60.1
+av
 mediapipe>=0.10
 opencv-python>=4.5

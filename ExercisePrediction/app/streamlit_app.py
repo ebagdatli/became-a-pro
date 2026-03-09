@@ -1,70 +1,123 @@
 """
 BecomeAPro - AI-Powered Exercise Tracker
-Modern Streamlit UI for real-time exercise pose detection and rep counting.
+Modern Streamlit UI with in-browser WebRTC camera for real-time
+pose detection and rep counting.
 """
-import subprocess
+import json
+import logging
+import os
 import sys
+import time
+import urllib.request
+from collections import Counter, deque
 from pathlib import Path
+from threading import Lock
 
+import av
+import cv2
+import mediapipe as mp
+import numpy as np
 import streamlit as st
 from joblib import load
+from mediapipe.tasks import python as mp_python
+from mediapipe.tasks.python import vision
+from streamlit_webrtc import WebRtcMode, webrtc_streamer
+
+try:
+    from streamlit_webrtc import get_twilio_ice_servers
+except ImportError:
+    get_twilio_ice_servers = None
+
+logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 MODELS_DIR = ROOT / "models"
+POSE_MODEL_PATH = MODELS_DIR / "pose_landmarker_lite.task"
+POSE_MODEL_URL = (
+    "https://storage.googleapis.com/mediapipe-models/"
+    "pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+)
+
+BUFFER_SIZE = 12
+CONFIDENCE_THRESHOLD = 0.65
+SCALE_XY = 100.0
+SCALE_Z = 200.0
+FRAME_SKIP = 2
+REP_DEBOUNCE = 3
+REP_DISPLAY_FRAMES = 20
+
+KCAL_PER_REP = {
+    "pushups": 0.4,
+    "situp": 0.3,
+    "squats": 0.35,
+    "pullups": 0.5,
+    "jumping_jacks": 0.2,
+}
+
+BODY_LANDMARK_INDICES = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
+BODY_CONNECTIONS = [
+    (11, 12), (11, 13), (13, 15), (12, 14), (14, 16),
+    (11, 23), (12, 24), (23, 24),
+    (23, 25), (25, 27), (24, 26), (26, 28),
+]
+
+MP_INDEX_TO_NAME = [
+    "nose", "left_eye_inner", "left_eye", "left_eye_outer",
+    "right_eye_inner", "right_eye", "right_eye_outer",
+    "left_ear", "right_ear", "mouth_left", "mouth_right",
+    "left_shoulder", "right_shoulder", "left_elbow", "right_elbow",
+    "left_wrist", "right_wrist", "left_pinky", "right_pinky",
+    "left_index", "right_index", "left_thumb", "right_thumb",
+    "left_hip", "right_hip", "left_knee", "right_knee",
+    "left_ankle", "right_ankle", "left_heel", "right_heel",
+    "left_foot_index", "right_foot_index",
+]
+
+NAME_ALIASES = {
+    "right_index_1": "right_index", "left_index_1": "left_index",
+    "left_pinky_1": "left_pinky", "right_pinky_1": "right_pinky",
+}
+
+POSE_TO_TURKISH = {
+    "situp_up": "Mekik (Yukari)",
+    "situp_down": "Mekik (Asagi)",
+    "pushups_up": "Sinav (Yukari)",
+    "pushups_down": "Sinav (Asagi)",
+    "pullups_up": "Barfiks (Yukari)",
+    "pullups_down": "Barfiks (Asagi)",
+    "squats_up": "Squat (Yukari)",
+    "squats_down": "Squat (Asagi)",
+    "jumping_jacks_up": "Ziplama (Yukari)",
+    "jumping_jacks_down": "Ziplama (Asagi)",
+    "Belirsiz": "Belirsiz",
+}
 
 EXERCISES = [
-    {
-        "name": "Sinav",
-        "en": "Push-ups",
-        "icon": "💪",
-        "desc": "Gogus, omuz ve triceps kaslari icin temel egzersiz.",
-        "color": "#00d4aa",
-    },
-    {
-        "name": "Mekik",
-        "en": "Sit-ups",
-        "icon": "🔄",
-        "desc": "Karin kaslari icin etkili bir core egzersizi.",
-        "color": "#7c3aed",
-    },
-    {
-        "name": "Squat",
-        "en": "Squats",
-        "icon": "🦵",
-        "desc": "Bacak ve kalca kaslari icin en etkili hareket.",
-        "color": "#f59e0b",
-    },
-    {
-        "name": "Barfiks",
-        "en": "Pull-ups",
-        "icon": "🧗",
-        "desc": "Sirt ve biceps kaslarini guclendiren egzersiz.",
-        "color": "#ef4444",
-    },
-    {
-        "name": "Ziplama",
-        "en": "Jumping Jacks",
-        "icon": "🤸",
-        "desc": "Tam vucut kardiyo ve koordinasyon egzersizi.",
-        "color": "#3b82f6",
-    },
+    {"name": "Sinav", "en": "Push-ups", "icon": "\U0001f4aa",
+     "desc": "Gogus, omuz ve triceps kaslari icin temel egzersiz.", "color": "#00d4aa"},
+    {"name": "Mekik", "en": "Sit-ups", "icon": "\U0001f504",
+     "desc": "Karin kaslari icin etkili bir core egzersizi.", "color": "#7c3aed"},
+    {"name": "Squat", "en": "Squats", "icon": "\U0001f9b5",
+     "desc": "Bacak ve kalca kaslari icin en etkili hareket.", "color": "#f59e0b"},
+    {"name": "Barfiks", "en": "Pull-ups", "icon": "\U0001f9d7",
+     "desc": "Sirt ve biceps kaslarini guclendiren egzersiz.", "color": "#ef4444"},
+    {"name": "Ziplama", "en": "Jumping Jacks", "icon": "\U0001f938",
+     "desc": "Tam vucut kardiyo ve koordinasyon egzersizi.", "color": "#3b82f6"},
 ]
+
+# ---------------------------------------------------------------------------
+# Page config
+# ---------------------------------------------------------------------------
 
 st.set_page_config(
     page_title="BecomeAPro | AI Exercise Tracker",
-    page_icon="🏋️",
+    page_icon="\U0001f3cb\ufe0f",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
-if "sessions_started" not in st.session_state:
-    st.session_state.sessions_started = 0
-if "camera_active" not in st.session_state:
-    st.session_state.camera_active = False
-
 
 # ---------------------------------------------------------------------------
 # CSS
@@ -74,13 +127,30 @@ CUSTOM_CSS = """\
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 #MainMenu, footer, header {visibility: hidden;}
-.block-container {padding-top: 0 !important; max-width: 1200px; margin: 0 auto;}
+.block-container {
+    padding-top: 0 !important;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+}
 
 .stApp {
     background: linear-gradient(180deg, #080810 0%, #0d0d1a 40%, #080810 100%);
     color: #e0e0e8;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
+/* Streamlit column gap normalization */
+[data-testid="stHorizontalBlock"] {
+    gap: 1rem !important;
+    align-items: stretch !important;
+}
+[data-testid="stColumn"] {
+    display: flex !important;
+    flex-direction: column !important;
+}
+[data-testid="stColumn"] > div { flex: 1; }
 
 /* Hero */
 .hero {
@@ -103,7 +173,6 @@ CUSTOM_CSS = """\
     from { transform: translate(0,0) rotate(0deg); }
     to   { transform: translate(-3%,2%) rotate(1deg); }
 }
-
 .hero-badge {
     display: inline-block;
     background: rgba(0,212,170,0.08);
@@ -117,7 +186,6 @@ CUSTOM_CSS = """\
     letter-spacing: 1.2px;
     text-transform: uppercase;
 }
-
 .hero h1 {
     font-size: clamp(2.2rem, 5vw, 3.8rem);
     font-weight: 800;
@@ -132,7 +200,6 @@ CUSTOM_CSS = """\
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
-
 .hero-sub {
     font-size: 1.12rem;
     color: #7a7a95;
@@ -169,6 +236,7 @@ CUSTOM_CSS = """\
     position: relative;
     overflow: hidden;
     height: 100%;
+    box-sizing: border-box;
 }
 .g-card:hover {
     border-color: rgba(0,212,170,0.18);
@@ -189,17 +257,8 @@ CUSTOM_CSS = """\
     font-size: 1.15rem;
     margin-bottom: 1rem;
 }
-.step-t {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #fff;
-    margin-bottom: 0.45rem;
-}
-.step-d {
-    font-size: 0.88rem;
-    color: #7a7a95;
-    line-height: 1.6;
-}
+.step-t { font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 0.45rem; }
+.step-d { font-size: 0.88rem; color: #7a7a95; line-height: 1.6; }
 
 /* Exercise Cards */
 .accent-top {
@@ -211,7 +270,6 @@ CUSTOM_CSS = """\
     transition: opacity 0.3s;
 }
 .g-card:hover .accent-top { opacity: 1; }
-
 .ex-icon  { font-size: 2.5rem; margin-bottom: 0.7rem; display: block; }
 .ex-name  { font-size: 1.05rem; font-weight: 600; color: #fff; margin-bottom: 0.15rem; }
 .ex-en    { font-size: 0.78rem; color: #5a5a7a; margin-bottom: 0.5rem; }
@@ -237,19 +295,8 @@ CUSTOM_CSS = """\
     z-index: 0;
     pointer-events: none;
 }
-.cta-t {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 0.5rem;
-    position: relative;
-}
-.cta-d {
-    color: #7a7a95;
-    margin-bottom: 0.2rem;
-    font-size: 0.95rem;
-    position: relative;
-}
+.cta-t { font-size: 1.75rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; position: relative; }
+.cta-d { color: #7a7a95; margin-bottom: 0.2rem; font-size: 0.95rem; position: relative; }
 
 /* Metric Card */
 .m-val {
@@ -260,12 +307,7 @@ CUSTOM_CSS = """\
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
-.m-lbl {
-    font-size: 0.82rem;
-    color: #7a7a95;
-    font-weight: 500;
-    margin-top: 4px;
-}
+.m-lbl { font-size: 0.82rem; color: #7a7a95; font-weight: 500; margin-top: 4px; }
 
 /* Primary Button */
 div.stButton > button[kind="primary"],
@@ -287,53 +329,6 @@ div.stButton > button[kind="primary"]:hover,
 div.stButton > button[data-testid="stBaseButton-primary"]:hover {
     box-shadow: 0 8px 36px rgba(0,212,170,0.38) !important;
     transform: translateY(-2px) !important;
-}
-div.stButton > button[kind="primary"]:active,
-div.stButton > button[data-testid="stBaseButton-primary"]:active {
-    transform: translateY(0) !important;
-}
-
-/* Secondary Button */
-div.stButton > button[kind="secondary"],
-div.stButton > button[data-testid="stBaseButton-secondary"] {
-    background: rgba(255,255,255,0.04) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 14px !important;
-    padding: 0.8rem 2rem !important;
-    color: #d0d0e0 !important;
-    font-family: 'Inter', sans-serif !important;
-    font-weight: 500 !important;
-    transition: all 0.3s !important;
-    min-height: 54px !important;
-}
-div.stButton > button[kind="secondary"]:hover,
-div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
-    background: rgba(255,255,255,0.08) !important;
-    border-color: rgba(0,212,170,0.25) !important;
-}
-
-/* Status Pill */
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(0,212,170,0.08);
-    border: 1px solid rgba(0,212,170,0.25);
-    border-radius: 50px;
-    padding: 8px 18px;
-    color: #00d4aa;
-    font-size: 0.88rem;
-    font-weight: 500;
-}
-.status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #00d4aa;
-    animation: blink 1.5s ease-in-out infinite;
-}
-@keyframes blink {
-    0%,100% { opacity:1; }
-    50%     { opacity:0.2; }
 }
 
 /* Tip Box */
@@ -367,32 +362,116 @@ div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
 }
 .foot a { color: #00d4aa; text-decoration: none; }
 
-/* Expander */
-.streamlit-expanderHeader {
-    background: rgba(18,18,30,0.5) !important;
-    border: 1px solid rgba(255,255,255,0.05) !important;
-    border-radius: 14px !important;
-    font-family: 'Inter', sans-serif !important;
-}
-
-/* Dataframe */
-[data-testid="stDataFrame"] { border-radius: 12px; overflow: hidden; }
-
 /* Scrollbar */
 ::-webkit-scrollbar       { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #3a3a52; }
 
-/* Alert Overrides */
-.stSuccess > div, .stInfo > div { border-radius: 12px !important; }
-
-/* File Uploader */
-[data-testid="stFileUploader"] section {
-    border-radius: 14px !important;
-    border: 1px dashed rgba(255,255,255,0.1) !important;
-    background: rgba(18,18,30,0.4) !important;
+/* Camera Section */
+.cam-wrapper {
+    background: rgba(12,12,22,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin: 1.2rem auto 0;
+    max-width: 720px;
+    position: relative;
+    overflow: hidden;
 }
+.cam-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(0,212,170,0.15), transparent 40%, rgba(124,58,237,0.15));
+    z-index: 0;
+    pointer-events: none;
+}
+.cam-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+.cam-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #00d4aa;
+    box-shadow: 0 0 8px rgba(0,212,170,0.5);
+    animation: camPulse 2s ease-in-out infinite;
+}
+.cam-dot.off { background: #555; box-shadow: none; animation: none; }
+@keyframes camPulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%     { opacity: 0.5; transform: scale(0.85); }
+}
+.cam-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a0a0b8;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.cam-guide {
+    display: flex;
+    gap: 1.2rem;
+    margin: 1.2rem 0;
+    position: relative;
+    z-index: 1;
+}
+.cam-guide-step {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 1rem 0.8rem;
+    text-align: center;
+}
+.cam-guide-icon { font-size: 1.5rem; margin-bottom: 0.4rem; display: block; }
+.cam-guide-text { font-size: 0.78rem; color: #7a7a95; line-height: 1.4; }
+
+/* WebRTC component wrapper */
+iframe[title*="webrtc"] {
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    border-radius: 14px !important;
+    background: rgba(10,10,20,0.9) !important;
+}
+
+/* Status Pill */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,212,170,0.08);
+    border: 1px solid rgba(0,212,170,0.25);
+    border-radius: 50px;
+    padding: 6px 16px;
+    color: #00d4aa;
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+.status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #00d4aa;
+    animation: camPulse 1.5s ease-in-out infinite;
+}
+
+/* Troubleshoot Card */
+.trouble-card {
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.15);
+    border-radius: 14px;
+    padding: 1.1rem 1.4rem;
+    color: #f5c96a;
+    font-size: 0.84rem;
+    line-height: 1.65;
+    margin: 0.8rem 0;
+}
+.trouble-card strong { color: #fad683; }
 
 /* Onboarding Card */
 .onboard-card {
@@ -402,16 +481,8 @@ div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
     padding: 2rem;
     text-align: center;
 }
-.onboard-card h3 {
-    color: #fff;
-    font-size: 1.3rem;
-    margin-bottom: 0.6rem;
-}
-.onboard-card p {
-    color: #7a7a95;
-    font-size: 0.92rem;
-    line-height: 1.6;
-}
+.onboard-card h3 { color: #fff; font-size: 1.3rem; margin-bottom: 0.6rem; }
+.onboard-card p { color: #7a7a95; font-size: 0.92rem; line-height: 1.6; }
 .onboard-card code {
     background: rgba(0,212,170,0.12);
     color: #00d4aa;
@@ -424,39 +495,341 @@ div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
 
 
 # ---------------------------------------------------------------------------
-# Model loading & prediction
+# ICE / TURN configuration
 # ---------------------------------------------------------------------------
 
 
-def load_model_and_artifacts():
+def get_ice_config() -> dict:
+    """Return WebRTC ICE configuration with Twilio TURN servers when available,
+    falling back to Google STUN for local development."""
+    if get_twilio_ice_servers is not None:
+        try:
+            sid = os.environ.get("TWILIO_ACCOUNT_SID", "")
+            token = os.environ.get("TWILIO_AUTH_TOKEN", "")
+            if not sid:
+                sid = st.secrets.get("TWILIO_ACCOUNT_SID", "")
+            if not token:
+                token = st.secrets.get("TWILIO_AUTH_TOKEN", "")
+            if sid and token:
+                ice = get_twilio_ice_servers(twilio_sid=sid, twilio_token=token)
+                logger.info("Using Twilio TURN servers (%d entries)", len(ice))
+                return {"iceServers": ice}
+        except Exception as exc:
+            logger.warning("Twilio ICE fetch failed, falling back to STUN: %s", exc)
+    return {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+
+
+# ---------------------------------------------------------------------------
+# Pose detection helpers
+# ---------------------------------------------------------------------------
+
+
+def label_to_turkish(label: str) -> str:
+    return POSE_TO_TURKISH.get(label, label)
+
+
+def ensure_pose_model() -> str:
+    if POSE_MODEL_PATH.exists():
+        return str(POSE_MODEL_PATH)
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    logger.info("Downloading pose_landmarker model...")
+    urllib.request.urlretrieve(POSE_MODEL_URL, POSE_MODEL_PATH)
+    logger.info("Download complete.")
+    return str(POSE_MODEL_PATH)
+
+
+def landmarks_to_vector(landmark_list, feature_columns):
+    name_to_idx = {name: i for i, name in enumerate(MP_INDEX_TO_NAME)}
+    for alias, canonical in NAME_ALIASES.items():
+        name_to_idx[alias] = name_to_idx.get(canonical, 0)
+
+    values = []
+    for col in feature_columns:
+        if not col.startswith(("x_", "y_", "z_")):
+            continue
+        axis = col[0]
+        name = col[2:].strip()
+        name = NAME_ALIASES.get(name, name)
+        idx = name_to_idx.get(name, -1)
+        if idx < 0:
+            values.append(0.0)
+            continue
+        lm = landmark_list[idx]
+        x_val = lm.x if lm.x is not None else 0.0
+        y_val = lm.y if lm.y is not None else 0.0
+        z_val = lm.z if lm.z is not None else 0.0
+        if axis == "x":
+            values.append((x_val - 0.5) * SCALE_XY)
+        elif axis == "y":
+            values.append((y_val - 0.5) * SCALE_XY)
+        else:
+            values.append(z_val * SCALE_Z)
+    return np.array(values, dtype=np.float32).reshape(1, -1)
+
+
+def predict_single(ml_model, encoder, scaler, model_type, X, buffer):
+    X_scaled = scaler.transform(X)
+    if model_type == "xgboost":
+        pred_idx = ml_model.predict(X_scaled)[0]
+        probs = ml_model.predict_proba(X_scaled)[0]
+    else:
+        import torch
+        with torch.no_grad():
+            X_t = torch.from_numpy(X_scaled.astype(np.float32))
+            logits = ml_model(X_t)
+            probs = torch.softmax(logits, dim=1).numpy()[0]
+            pred_idx = int(np.argmax(probs))
+
+    conf = float(probs[pred_idx])
+    if conf < CONFIDENCE_THRESHOLD:
+        buffer.append("Belirsiz")
+    else:
+        label = encoder.inverse_transform([pred_idx])[0]
+        buffer.append(label)
+
+    counted = Counter(buffer)
+    mode_label = counted.most_common(1)[0][0]
+    return mode_label, conf
+
+
+def draw_overlay_panel(frame, label, conf, reps=None):
+    h, w = frame.shape[:2]
+    has_reps = reps is not None and reps > 0
+    panel_h = 120 if has_reps else 90
+    panel_w = min(400, w - 20)
+    x1, y1 = 10, 10
+    x2, y2 = x1 + panel_w, y1 + panel_h
+
+    overlay = frame.copy()
+    cv2.rectangle(overlay, (x1, y1), (x2, y2), (30, 30, 30), -1)
+    cv2.addWeighted(overlay, 0.75, frame, 0.25, 0, frame)
+    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 200, 100), 2)
+
+    turkce = label_to_turkish(label)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    color = (0, 255, 150) if label != "Belirsiz" else (100, 100, 100)
+
+    cv2.putText(frame, f"Hareket: {turkce}", (x1 + 12, y1 + 38),
+                font, 0.9, color, 2)
+    cv2.putText(frame, f"Guven: %{conf * 100:.0f}", (x1 + 12, y1 + 72),
+                font, 0.7, (200, 200, 200), 2)
+
+    if has_reps:
+        cv2.putText(frame, f"Tekrar: {reps}", (x1 + 12, y1 + 106),
+                    font, 0.8, (0, 212, 170), 2)
+
+
+def draw_center_counter(frame, reps, frames_since_rep):
+    if frames_since_rep >= REP_DISPLAY_FRAMES:
+        return
+    alpha = 1.0 - (frames_since_rep / REP_DISPLAY_FRAMES)
+    h, w = frame.shape[:2]
+    text = str(reps)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    scale = 4.0
+    thickness = 8
+    (tw, th), _ = cv2.getTextSize(text, font, scale, thickness)
+    tx = (w - tw) // 2
+    ty = (h + th) // 2
+
+    overlay = frame.copy()
+    cv2.putText(overlay, text, (tx, ty), font, scale, (200, 200, 200), thickness)
+    cv2.addWeighted(overlay, alpha * 0.6, frame, 1.0 - alpha * 0.6, 0, frame)
+
+
+# ---------------------------------------------------------------------------
+# Thread-safe model & pose landmarker loader
+# ---------------------------------------------------------------------------
+
+
+@st.cache_resource
+def load_all_artifacts():
+    """Load ML model, scaler, encoder, feature columns, and MediaPipe pose landmarker."""
     meta_path = MODELS_DIR / "meta.pkl"
-    if not meta_path.exists():
-        return None, None, None, None, None
+    metadata_path = MODELS_DIR / "metadata.json"
+    if not meta_path.exists() or not metadata_path.exists():
+        return None, None, None, None, None, None, None
 
     meta = load(meta_path)
     encoder = load(MODELS_DIR / "encoder.pkl")
     scaler = load(MODELS_DIR / "scaler.pkl")
-    categories = meta.get("categories", load(MODELS_DIR / "categories.pkl"))
     model_type = meta.get("model_type", "xgboost")
 
     model_path = meta.get("model_path")
-    if model_path and not Path(model_path).is_absolute():
-        model_path = MODELS_DIR / Path(model_path).name
+    if model_path:
+        filename = model_path.replace("\\", "/").split("/")[-1]
+        model_path = MODELS_DIR / filename
 
     if model_type == "xgboost":
-        model = load(model_path)
+        ml_model = load(model_path)
     else:
         import torch
-        from src.train import build_pytorch_model
-
         input_size = meta.get("input_size", 99)
-        num_classes = meta.get("num_classes", len(categories))
-        model = build_pytorch_model(input_size, num_classes)
-        model.load_state_dict(torch.load(model_path))
-        model.eval()
+        num_classes = meta.get("num_classes", 10)
+        from torch import nn
+        ml_model = nn.Sequential(
+            nn.Linear(input_size, 200),
+            nn.ReLU(),
+            nn.Linear(200, num_classes),
+        )
+        ml_model.load_state_dict(torch.load(model_path, map_location="cpu"))
+        ml_model.eval()
 
-    return model, encoder, scaler, categories, model_type
+    with open(metadata_path, encoding="utf-8") as f:
+        feature_columns = json.load(f).get("feature_columns", [])
 
+    pose_model_path = ensure_pose_model()
+    base_options = mp_python.BaseOptions(model_asset_path=pose_model_path)
+    options = vision.PoseLandmarkerOptions(
+        base_options=base_options,
+        running_mode=vision.RunningMode.IMAGE,
+    )
+    pose_landmarker = vision.PoseLandmarker.create_from_options(options)
+
+    return ml_model, encoder, scaler, model_type, feature_columns, pose_landmarker, meta
+
+
+# ---------------------------------------------------------------------------
+# WebRTC video callback
+# ---------------------------------------------------------------------------
+
+_buffer_lock = Lock()
+_prediction_buffer: deque = deque(maxlen=BUFFER_SIZE)
+
+
+def _draw_body_skeleton(img, pose_landmarks):
+    h, w = img.shape[:2]
+    points = {}
+    for idx in BODY_LANDMARK_INDICES:
+        lm = pose_landmarks[idx]
+        px, py = int(lm.x * w), int(lm.y * h)
+        points[idx] = (px, py)
+        cv2.circle(img, (px, py), 5, (0, 212, 170), -1)
+        cv2.circle(img, (px, py), 7, (0, 212, 170), 1)
+
+    for a, b in BODY_CONNECTIONS:
+        if a in points and b in points:
+            cv2.line(img, points[a], points[b], (0, 255, 0), 2)
+
+
+def make_video_frame_callback(ml_model, encoder, scaler, model_type,
+                               feature_columns, pose_landmarker):
+    frame_counter = [0]
+    cached_label = ["Belirsiz"]
+    cached_conf = [0.0]
+
+    rep_state = {
+        "phase": "idle",
+        "reps": 0,
+        "debounce_count": 0,
+        "pending_phase": None,
+        "frames_since_rep": REP_DISPLAY_FRAMES,
+        "exercise_reps": {},
+        "start_time": None,
+    }
+
+    def _update_rep_counter(label):
+        phase = rep_state["phase"]
+
+        if rep_state["start_time"] is None and label != "Belirsiz":
+            rep_state["start_time"] = time.time()
+
+        exercise = label.rsplit("_", 1)[0] if "_" in label else None
+
+        if label.endswith("_down"):
+            target = "down"
+        elif label.endswith("_up"):
+            target = "up"
+        else:
+            rep_state["debounce_count"] = 0
+            rep_state["pending_phase"] = None
+            return
+
+        if phase == "idle" and target == "down":
+            _try_transition("down", exercise)
+        elif phase == "down" and target == "up":
+            if _try_transition("up", exercise):
+                rep_state["reps"] += 1
+                rep_state["frames_since_rep"] = 0
+                if exercise:
+                    rep_state["exercise_reps"][exercise] = (
+                        rep_state["exercise_reps"].get(exercise, 0) + 1
+                    )
+        elif phase == "up" and target == "down":
+            _try_transition("down", exercise)
+
+    def _try_transition(target, exercise=None):
+        if rep_state["pending_phase"] == target:
+            rep_state["debounce_count"] += 1
+        else:
+            rep_state["pending_phase"] = target
+            rep_state["debounce_count"] = 1
+
+        if rep_state["debounce_count"] >= REP_DEBOUNCE:
+            rep_state["phase"] = target
+            rep_state["pending_phase"] = None
+            rep_state["debounce_count"] = 0
+            return True
+        return False
+
+    def video_frame_callback(frame: av.VideoFrame) -> av.VideoFrame:
+        img = frame.to_ndarray(format="bgr24")
+        img = cv2.flip(img, 1)
+
+        frame_counter[0] += 1
+        rep_state["frames_since_rep"] += 1
+        should_process = (frame_counter[0] % FRAME_SKIP == 0)
+
+        if not should_process:
+            draw_overlay_panel(img, cached_label[0], cached_conf[0],
+                               reps=rep_state["reps"])
+            draw_center_counter(img, rep_state["reps"],
+                                rep_state["frames_since_rep"])
+            return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+
+        try:
+            detection_result = pose_landmarker.detect(mp_image)
+        except Exception:
+            draw_overlay_panel(img, "Belirsiz", 0.0, reps=rep_state["reps"])
+            return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+        if detection_result.pose_landmarks:
+            pose_landmarks = detection_result.pose_landmarks[0]
+            _draw_body_skeleton(img, pose_landmarks)
+
+            try:
+                X = landmarks_to_vector(pose_landmarks, feature_columns)
+                if X.shape[1] == scaler.n_features_in_:
+                    with _buffer_lock:
+                        label, conf = predict_single(
+                            ml_model, encoder, scaler, model_type,
+                            X, _prediction_buffer,
+                        )
+                    cached_label[0] = label
+                    cached_conf[0] = conf
+                    _update_rep_counter(label)
+                    draw_overlay_panel(img, label, conf,
+                                       reps=rep_state["reps"])
+            except Exception as e:
+                cv2.putText(img, f"Error: {e}", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+        else:
+            cached_label[0] = "Belirsiz"
+            cached_conf[0] = 0.0
+            draw_overlay_panel(img, "Belirsiz", 0.0, reps=rep_state["reps"])
+            h, w = img.shape[:2]
+            cv2.putText(img, "Tam vucut gorunumunde durun",
+                        (10, h - 25), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.55, (0, 165, 255), 1)
+
+        draw_center_counter(img, rep_state["reps"],
+                            rep_state["frames_since_rep"])
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+    return video_frame_callback, rep_state
 
 
 # ---------------------------------------------------------------------------
@@ -484,12 +857,11 @@ def render_hero():
 
 
 def render_stats():
-    cols = st.columns(4)
+    cols = st.columns(3)
     stats = [
         ("5", "Desteklenen Egzersiz"),
         ("10", "Hareket Pozisyonu"),
         ("33", "Vucut Noktasi Takibi"),
-        (str(st.session_state.sessions_started), "Baslanan Antrenman"),
     ]
     for col, (val, label) in zip(cols, stats):
         with col:
@@ -507,34 +879,23 @@ def render_stats():
 def render_how_it_works():
     st.markdown('<div class="sep"></div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="sec-title">Nasil Calisir?</div>', unsafe_allow_html=True
+        '<div class="sec-title">Nasil Calisir?</div>', unsafe_allow_html=True,
     )
     st.markdown(
         '<div class="sec-sub">Uc basit adimda antrenmanina basla</div>',
         unsafe_allow_html=True,
     )
-
     steps = [
-        (
-            "1",
-            "Kamerayi Baslat",
-            "Asagidaki butona tiklayarak webcam penceresini ac. "
-            "Kameranin tam vucudunu gorecegi bir konumda dur.",
-        ),
-        (
-            "2",
-            "Egzersizini Yap",
-            "Sinav, mekik, squat veya baska bir egzersiz yapmaya basla. "
-            "AI modeli hareketlerini anlik olarak tanir.",
-        ),
-        (
-            "3",
-            "Sonuclarini Gor",
-            "Tekrar sayilari, hareket tipi ve guven orani "
-            "ekranda canli olarak gosterilir.",
-        ),
+        ("1", "Kamerayi Baslat",
+         "Asagidaki START butonuna tiklayarak tarayici kameranizi acin. "
+         "Kameranin tam vucudunuzu gorecegi bir konumda durun."),
+        ("2", "Egzersizini Yap",
+         "Sinav, mekik, squat veya baska bir egzersiz yapmaya baslayin. "
+         "AI modeli hareketlerinizi anlik olarak tanir."),
+        ("3", "Sonuclarini Gor",
+         "Hareket tipi, guven orani ve tekrar sayilari video uzerinde "
+         "canli olarak gosterilir."),
     ]
-
     cols = st.columns(3)
     for col, (num, title, desc) in zip(cols, steps):
         with col:
@@ -560,7 +921,6 @@ def render_exercises():
         '<div class="sec-sub">AI modelimiz asagidaki hareketleri taniyor</div>',
         unsafe_allow_html=True,
     )
-
     cols = st.columns(5)
     for col, ex in zip(cols, EXERCISES):
         with col:
@@ -578,70 +938,173 @@ def render_exercises():
             )
 
 
-def render_workout_launcher():
+def render_camera_section(ml_model, encoder, scaler, model_type,
+                           feature_columns, pose_landmarker):
     st.markdown('<div class="sep"></div>', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="cta-box">
             <div class="cta-t">Antrenmanina Basla</div>
             <div class="cta-d">
-                Kamerani acarak yapay zeka destekli egzersiz takibine hemen basla
+                START butonuna tiklayarak kameranizi acin ve egzersize baslayin
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    _pad_l, col_center, _pad_r = st.columns([1, 2, 1])
-    with col_center:
-        if st.button("Kamerayi Baslat", type="primary", use_container_width=True):
-            venv_python = (
-                ROOT
-                / "venv"
-                / ("Scripts" if sys.platform == "win32" else "bin")
-                / ("python.exe" if sys.platform == "win32" else "python")
-            )
-            python_exe = str(venv_python) if venv_python.exists() else sys.executable
-            try:
-                subprocess.Popen(
-                    [python_exe, "-m", "src.camera_demo"],
-                    cwd=str(ROOT),
-                    creationflags=(
-                        subprocess.CREATE_NEW_CONSOLE
-                        if sys.platform == "win32"
-                        else 0
-                    ),
-                )
-                st.session_state.sessions_started += 1
-                st.session_state.camera_active = True
-            except Exception as e:
-                st.error(f"Kamera baslatilamadi: {e}")
+    st.markdown(
+        """
+        <div class="tip-box" style="margin-top:1rem; text-align:center;">
+            <strong>Ipucu:</strong> Iyi aydinlatilmis bir ortamda
+            tam vucut gorunumunde durmaniz en iyi sonuclari verir.
+            Tarayiciniz kamera izni isteyecektir.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    if st.session_state.camera_active:
-        _p1, col_status, _p2 = st.columns([1, 2, 1])
-        with col_status:
+    callback, rep_state = make_video_frame_callback(
+        ml_model, encoder, scaler, model_type, feature_columns, pose_landmarker,
+    )
+
+    _pad_l, cam_col, _pad_r = st.columns([1, 6, 1])
+    with cam_col:
+        st.markdown(
+            """
+            <div class="cam-wrapper">
+                <div class="cam-header">
+                    <div class="cam-dot off"></div>
+                    <span class="cam-label">Kamera</span>
+                </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        webrtc_ctx = webrtc_streamer(
+            key="exercise-detection",
+            mode=WebRtcMode.SENDRECV,
+            video_frame_callback=callback,
+            media_stream_constraints={
+                "video": {"width": {"ideal": 640}, "height": {"ideal": 480}},
+                "audio": False,
+            },
+            async_processing=True,
+            rtc_configuration=get_ice_config(),
+            translations={
+                "start": "START",
+                "stop": "STOP",
+                "select_device": "Kamera Sec",
+            },
+        )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    if webrtc_ctx.state.playing:
+        with cam_col:
             st.markdown(
                 """
-                <div style="text-align:center; margin-top:0.8rem;">
+                <div style="text-align:center; margin-top:0.6rem;">
                     <div class="status-pill">
                         <span class="status-dot"></span>
-                        Kamera penceresi acildi
+                        Kamera aktif &mdash; Egzersize baslayin
                     </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+        if rep_state["start_time"] is None:
+            rep_state["start_time"] = time.time()
+        st.session_state["rep_state_snapshot"] = {
+            "reps": rep_state["reps"],
+            "exercise_reps": dict(rep_state["exercise_reps"]),
+            "start_time": rep_state["start_time"],
+        }
+    else:
+        with cam_col:
             st.markdown(
                 """
-                <div class="tip-box" style="margin-top:0.8rem; text-align:center;">
-                    <strong>Ipucu:</strong> Gorev cubugunda acilan kamera penceresine tiklayin.
-                    Cikmak icin <strong>Q</strong> tusuna basin. Iyi aydinlatilmis bir ortamda
-                    tam vucut gorunumunde durmaniz en iyi sonuclari verir.
+                <div class="cam-guide">
+                    <div class="cam-guide-step">
+                        <span class="cam-guide-icon">&#x1F4F7;</span>
+                        <span class="cam-guide-text">Kamera iznini<br>onaylayin</span>
+                    </div>
+                    <div class="cam-guide-step">
+                        <span class="cam-guide-icon">&#x1F9CD;</span>
+                        <span class="cam-guide-text">Tam vucut<br>gorunumunde durun</span>
+                    </div>
+                    <div class="cam-guide-step">
+                        <span class="cam-guide-icon">&#x1F3CB;</span>
+                        <span class="cam-guide-text">Egzersizinizi<br>yapmaya baslayin</span>
+                    </div>
+                </div>
+                <div class="trouble-card" style="text-align:center;">
+                    <strong>Baglanti sorunu mu yasiyorsunuz?</strong><br>
+                    Tarayicinizin kamera erisim izni verdiginizden emin olun.
+                    Chrome veya Edge kullanmaniz onerilir.
+                    Sorun devam ederse sayfayi yenileyip tekrar deneyin.
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
+        if st.session_state.get("rep_state_snapshot"):
+            snap = st.session_state["rep_state_snapshot"]
+            if snap["reps"] > 0 and snap["start_time"]:
+                elapsed = time.time() - snap["start_time"]
+                _render_workout_summary(snap, elapsed)
+                st.session_state["rep_state_snapshot"] = None
+
+
+def _render_workout_summary(snap, elapsed_seconds):
+    mins = int(elapsed_seconds) // 60
+    secs = int(elapsed_seconds) % 60
+
+    total_kcal = 0.0
+    rows_html = ""
+    exercise_names = {
+        "pushups": "Sinav",
+        "situp": "Mekik",
+        "squats": "Squat",
+        "pullups": "Barfiks",
+        "jumping_jacks": "Ziplama",
+    }
+    for ex, count in snap["exercise_reps"].items():
+        name = exercise_names.get(ex, ex)
+        kcal = count * KCAL_PER_REP.get(ex, 0.3)
+        total_kcal += kcal
+        rows_html += f"""
+        <div style="display:flex; justify-content:space-between; padding:8px 0;
+                    border-bottom:1px solid rgba(255,255,255,0.06);">
+            <span>{name}</span>
+            <span style="color:#00d4aa; font-weight:600;">{count} tekrar</span>
+        </div>"""
+
+    st.markdown(
+        f"""
+        <div style="background:rgba(18,18,30,0.85); border:1px solid rgba(0,212,170,0.2);
+                    border-radius:20px; padding:2rem; margin:1.5rem 0;
+                    max-width:500px; margin-left:auto; margin-right:auto;">
+            <div style="text-align:center; margin-bottom:1.2rem;">
+                <div style="font-size:1.4rem; font-weight:700; color:#fff;">
+                    Antrenman Ozeti
+                </div>
+                <div style="color:#7a7a95; font-size:0.9rem; margin-top:4px;">
+                    Sure: {mins} dk {secs} sn
+                </div>
+            </div>
+            {rows_html}
+            <div style="display:flex; justify-content:space-between; padding:12px 0 0;
+                        margin-top:8px;">
+                <span style="font-weight:600; color:#fff;">Tahmini Kalori</span>
+                <span style="color:#f59e0b; font-weight:700; font-size:1.1rem;">
+                    {total_kcal:.1f} kcal
+                </span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_footer():
@@ -650,7 +1113,7 @@ def render_footer():
         <div class="foot">
             <strong>BecomeAPro</strong> &mdash; AI-Powered Exercise Tracker<br>
             <span style="font-size:0.78rem; margin-top:4px; display:inline-block;">
-                MediaPipe &bull; XGBoost / PyTorch &bull; Streamlit
+                MediaPipe &bull; XGBoost / PyTorch &bull; Streamlit &bull; WebRTC
             </span>
         </div>
         """,
@@ -659,7 +1122,6 @@ def render_footer():
 
 
 def render_model_missing():
-    """Friendly onboarding when models haven't been trained yet."""
     st.markdown('<div class="sep"></div>', unsafe_allow_html=True)
     _p1, col_c, _p2 = st.columns([1, 3, 1])
     with col_c:
@@ -691,19 +1153,24 @@ def render_model_missing():
 def main():
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-    model, encoder, scaler, categories, model_type = load_model_and_artifacts()
+    result = load_all_artifacts()
+    ml_model = result[0]
 
     render_hero()
 
-    if model is None:
+    if ml_model is None:
         render_model_missing()
         render_footer()
         return
 
+    ml_model, encoder, scaler, model_type, feature_columns, pose_landmarker, _ = result
+
     render_stats()
     render_how_it_works()
     render_exercises()
-    render_workout_launcher()
+    render_camera_section(
+        ml_model, encoder, scaler, model_type, feature_columns, pose_landmarker,
+    )
     render_footer()
 
 
