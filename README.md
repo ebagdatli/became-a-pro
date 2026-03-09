@@ -136,8 +136,8 @@ streamlit run app/streamlit_app.py
 
 ### Core ML & AI
 
-| Teknoloji | Kullanim Alani |
-|-----------|---------------|
+| Teknoloji | 
+|-----------|
 | **MediaPipe** | 
 | **XGBoost** |
 | **PyTorch** |
