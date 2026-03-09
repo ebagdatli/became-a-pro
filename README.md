@@ -1,12 +1,11 @@
 ---
-
 # NoPainNoGain
 
 ### AI-Powered Real-Time Exercise Tracking Platform
 
 [![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-ActiMetric--AI-blue)](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
-[![Python](https://img.shields.io/badge/Python-3.10+-3776ab?logo=python&logoColor=white)](https://python.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.20+-ff4b4b?logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776ab?logo=python\&logoColor=white)](https://python.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.20+-ff4b4b?logo=streamlit\&logoColor=white)](https://streamlit.io)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -61,7 +60,8 @@ These subprojects will eventually be **combined into a single unified system**.
 | **Exercise Prediction** | Multi-Class Exercise Poses | **Tabular:** 10 exercise poses (push-up, pull-up, sit-up, etc.) using MediaPipe 33 landmarks. | Kaggle |
 
 ---
-### UI
+
+## UI
 
 |                                     |                                               |
 | :---------------------------------: | :-------------------------------------------: |
@@ -70,7 +70,6 @@ These subprojects will eventually be **combined into a single unified system**.
 
 ---
 
-```
 ## Folder Structure
 
 ```
@@ -90,7 +89,9 @@ NoPainNoGain/
 └── README.md
 ```
 
-### Model Run
+---
+
+## Model Run
 
 ```bash
 # Tum pipeline'i bastan calistir (notebook uzerinden)
@@ -111,15 +112,13 @@ streamlit run app/streamlit_app.py
 
 ### Core ML & AI
 
-| Teknoloji | 
-|-----------|
-| **MediaPipe** | 
-| **XGBoost** |
-| **PyTorch** |
-| **TensorFlow / Keras** | 
-| **scikit-learn** | 
+| Teknoloji              |
+| ---------------------- |
+| **MediaPipe**          |
+| **XGBoost**            |
+| **PyTorch**            |
+| **TensorFlow / Keras** |
+| **scikit-learn**       |
 
 > The **ExercisePrediction** project is also being developed as an independent repository:
-> [https://github.com/ebagdatli/no-pain-no-gain](https://github.com/ebagdatli/no-pain-no-gain)
-
----
+> https://github.com/ebagdatli/no-pain-no-gain
