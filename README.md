@@ -46,16 +46,6 @@ Using your camera, the system analyzes body movements instantly and detects diff
 
 ---
 
-## 🛣️ Development Roadmap (v2 & Beyond)
-
-| Feature | Status | Tech Stack |
-| :--- | :---: | :--- |
-| **Real-time Recognition** | ✅ | MediaPipe + XGBoost |
-| **Repetition Counting** | 🏗️ | Temporal Smoothing / Peak Detection |
-| **Calorie Estimation** | 📋 | MET Value Integration |
-| **Form Analysis (AI Coach)** | 📋 | Angle Consistency Check |
----
-
 # Kaggle Exercise & Computer Vision Dataset Summary
 
 | Topic                   | Competition / Dataset      | Data Content (Summary)                                                                        | Link   |
