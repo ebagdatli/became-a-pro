@@ -22,7 +22,6 @@
   <img src="https://img.shields.io/badge/Framework-MediaPipe-00B0FF?style=flat-square" alt="MediaPipe">
   <img src="https://img.shields.io/badge/UI-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit">
 </p>
----
 
 ## About the Project
 
