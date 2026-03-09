@@ -1,10 +1,28 @@
-# NoPainNoGain
+🏋️‍♂️ NoPainNoGain
+Next-Generation AI Exercise Analytics
+<p align="center">
+<img src="assets/actimetric_hero.png" width="850" alt="NoPainNoGain Hero">
+</p>
 
-### AI-Powered Real-Time Exercise Tracking Platform
+<p align="center">
+<a href="https://huggingface.co/spaces/bagdatli/ActiMetric-AI">
+<img src="https://img.shields.io/badge/%F0%9F%9A%80%20LIVE%20DEMO-TRY%20ON%20HUGGING%20FACE-FFA000?style=for-the-badge&logo=huggingface&logoColor=white" height="45">
+</a>
+</p>
 
-[![Live Demo](https://img.shields.io/badge/DEMO-TRY%20IT%20NOW%20ON%20HUGGING%20FACE-orange?style=for-the-badge&logo=huggingface&logoColor=white)](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+<p align="center">
+<b>Transform your webcam into a personal AI trainer.</b>
 
-> **🚀 Instant Access:** No installation required. Click the banner above to test the real-time pose detection directly in your browser!
+
+<i>Real-time pose estimation, exercise classification, and movement analytics.</i>
+</p>
+
+<p align="center">
+<img src="https://img.shields.io/github/stars/ebagdatli/no-pain-no-gain?style=flat-square&color=6e5494" alt="Stars">
+<img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=flat-square&logo=python&logoColor=white" alt="Python">
+<img src="https://img.shields.io/badge/Framework-MediaPipe-00B0FF?style=flat-square" alt="MediaPipe">
+<img src="https://img.shields.io/badge/UI-Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white" alt="Streamlit">
+</p>
 
 ---
 
