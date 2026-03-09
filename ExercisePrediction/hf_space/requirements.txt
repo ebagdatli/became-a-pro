@@ -1,5 +1,6 @@
 streamlit>=1.20
 streamlit-webrtc>=0.60.1
+twilio
 av
 numpy>=1.21
 scikit-learn>=1.0
