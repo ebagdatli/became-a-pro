@@ -117,17 +117,24 @@ streamlit run app/streamlit_app.py
 
 ---
 
-## Technologies Used
+---
 
-### Core ML & AI
+### 🧠 Core ML & AI Stack
 
-| Teknoloji              |
-| ---------------------- |
-| **MediaPipe**          |
-| **XGBoost**            |
-| **PyTorch**            |
-| **TensorFlow / Keras** |
-| **scikit-learn**       |
+| Technology | Role in Project | Category |
+| --- | --- | --- |
+| <img src="[https://raw.githubusercontent.com/google/mediapipe/master/mediapipe_logo.png](https://www.google.com/search?q=https://raw.githubusercontent.com/google/mediapipe/master/mediapipe_logo.png)" width="18"/> **MediaPipe** | 33-landmark real-time pose estimation & tracking. | **Computer Vision** |
+| <img src="[https://raw.githubusercontent.com/dmlc/web-data/master/xgboost/logo/xgboost-logo.png](https://www.google.com/search?q=https://raw.githubusercontent.com/dmlc/web-data/master/xgboost/logo/xgboost-logo.png)" width="18"/> **XGBoost** | High-performance gradient boosting for exercise classification. | **Machine Learning** |
+| <img src="[https://upload.wikimedia.org/wikipedia/commons/1/10/PyTorch_logo_icon.svg](https://www.google.com/search?q=https://upload.wikimedia.org/wikipedia/commons/1/10/PyTorch_logo_icon.svg)" width="18"/> **PyTorch** | Deep learning research and custom model architecture. | **Deep Learning** |
+| <img src="[https://www.gstatic.com/devrel-devsite/prod/v2385106516327668630712398553648115664326/tensorflow/images/favicon.png](https://www.google.com/search?q=https://www.gstatic.com/devrel-devsite/prod/v2385106516327668630712398553648115664326/tensorflow/images/favicon.png)" width="18"/> **TensorFlow** | Pose-based sequence modeling and Keras integration. | **Deep Learning** |
+| <img src="[https://upload.wikimedia.org/wikipedia/commons/0/05/Scikit_learn_logo_small.svg](https://www.google.com/search?q=https://upload.wikimedia.org/wikipedia/commons/0/05/Scikit_learn_logo_small.svg)" width="18"/> **scikit-learn** | Data preprocessing, pipeline scaling, and evaluation metrics. | **Data Science** |
+
+### 💻 Infrastructure & Web
+
+* **Streamlit:** Powers the interactive web dashboard and real-time camera feedback.
+* **Hugging Face Spaces:** Handles global deployment and model hosting.
+* **Python 3.10+:** The core language driving the entire data pipeline.
+---
 
 > The **ExercisePrediction** project is also being developed as an independent repository:
 > https://github.com/ebagdatli/no-pain-no-gain
