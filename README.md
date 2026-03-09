@@ -1,23 +1,12 @@
 # NoPainNoGain
 
-### AI-Powered Real-Time Exercise Tracking Platform
-
 <p align="center">
-
-<a href="https://huggingface.co/spaces/bagdatli/ActiMetric-AI">
-<img src="https://img.shields.io/badge/🚀%20LIVE%20AI%20DEMO-Try%20on%20HuggingFace-ffcc00?style=for-the-badge"/>
-</a>
-
-<a href="https://huggingface.co/spaces/bagdatli/ActiMetric-AI">
-<img src="https://img.shields.io/badge/🤗%20HuggingFace%20Space-ActiMetric--AI-blue?style=for-the-badge&logo=huggingface"/>
-</a>
-
+  <img src="assets/actimetric_hero.png" width="800" alt="Hero Banner">
 </p>
 
-<p align="center">
-🧠 <b>Try the real-time AI exercise recognition directly in your browser</b><br>
-📷 Camera-based pose detection powered by MediaPipe and Machine Learning
-</p>
+| 🌐 Live Deployment | 🤖 Model Status | ⚡ Latency |
+| :--- | :--- | :--- |
+| [**Try on Hugging Face Spaces**](https://huggingface.co/spaces/bagdatli/ActiMetric-AI) | `✅ Production Ready` | `~30ms (Real-time)` |
 
 ---
 
