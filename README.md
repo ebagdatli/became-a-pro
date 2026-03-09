@@ -46,20 +46,14 @@ Using your camera, the system analyzes body movements instantly and detects diff
 
 ---
 
-# Approach
+## 🛣️ Development Roadmap (v2 & Beyond)
 
-The project is designed as a **single integrated system**.
-
-To achieve this goal:
-
-* Projects that perform well in **sit-up detection**
-* Projects that perform well in **push-up detection**
-* Projects that perform well in **pull-up detection**
-* Projects that perform well in **general action recognition**
-
-were analyzed, their datasets were studied, and models were developed.
-
-These subprojects will eventually be **combined into a single unified system**.
+| Feature | Status | Tech Stack |
+| :--- | :---: | :--- |
+| **Real-time Recognition** | ✅ | MediaPipe + XGBoost |
+| **Repetition Counting** | 🏗️ | Temporal Smoothing / Peak Detection |
+| **Calorie Estimation** | 📋 | MET Value Integration |
+| **Form Analysis (AI Coach)** | 📋 | Angle Consistency Check |
 ---
 
 # Kaggle Exercise & Computer Vision Dataset Summary
