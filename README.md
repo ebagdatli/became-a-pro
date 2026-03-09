@@ -1,78 +1,111 @@
+Aşağıda README dosyanın **doğal ve düzgün İngilizceye çevrilmiş hali** bulunuyor. Teknik README formatını ve GitHub stilini de korudum.
+
+---
+
 # NoPainNoGain
 
 [![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-ActiMetric--AI-blue)](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
 
-> **Canli Demo:** [https://huggingface.co/spaces/bagdatli/ActiMetric-AI](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
-
-## Proje Hakkinda
-
-Yapay zeka destekli, gercek zamanli egzersiz tanimlama ve analiz platformu. Kameraniz araciligiyla vucut hareketlerinizi anlik olarak analiz eder.
-
-- [x] **Egzersiz Tanimlama** -- Gercek zamanli kamera goruntusuyle sinav, mekik, squat, barfiks ve ziplama hareketlerini otomatik olarak tanir
-- [ ] **Tekrar Sayimi** -- Her egzersiz icin tekrar sayisini otomatik hesaplar *(v2)*
-- [ ] **Kalori Tahmini** -- Yapilan egzersiz turune ve tekrar sayisina gore yakilaN kaloriyi hesaplar *(v2)*
+> **Live Demo:** [https://huggingface.co/spaces/bagdatli/ActiMetric-AI](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
 
 ---
 
-## Yaklaşım
+“About the Project” kısmında **v2 özelliklerini daha net ayırmak** için genelde README’lerde iki ayrı bölüm kullanılır:
 
-Proje, tek bir bütünleşik sistem oluşturmak üzere tasarlanmıştır. Bu amaçla:
+* **Current Features**
+* **Planned Features (v2)**
 
-- Mekik konusunda iyi çalışan
-- Şınav konusunda iyi çalışan
-- Barfiks konusunda iyi çalışan
-- Tüm hareketleri tanımada iyi olan
-
-birden fazla referans proje incelenmiş, veri setleri kullanılmış ve modeller geliştirilmiştir. Bu alt projeler daha sonra **tek bir proje amacıyla birleştirilecektir**.
+Aşağıdaki gibi yazarsan hem daha profesyonel görünür hem de roadmap daha anlaşılır olur.
 
 ---
 
-## Kaggle Egzersiz ve Görüntü İşleme Veri Özetleri
+## About the Project
 
-| Konu Başlığı | Yarışma / Veri Seti | Veri İçeriği (Özet) | Link |
-| --- | --- | --- | --- |
-| **Calorie Expenditure** | [Playground Series S5E5](https://www.kaggle.com/competitions/playground-series-s5e5) | **Tabular:** Nabız, süre ve vücut tipi verisiyle kalori tahmini. | [Kaggle](https://www.kaggle.com/competitions/playground-series-s5e5) |
-| **Facial Keypoints** | [Facial Keypoints Detection](https://www.kaggle.com/c/facial-keypoints-detection) | **Görüntü:** Yüzdeki 15 kilit noktanın $(x, y)$ koordinatları. | [Kaggle](https://www.kaggle.com/c/facial-keypoints-detection) |
-| **Action Recognition** | [Human Action Recognition](https://www.kaggle.com/datasets/meetnagadia/human-action-recognition-har-dataset) | **Görüntü:** 15 farklı günlük aktivite etiketi (koşma, yürüme vb.). | [Kaggle](https://www.kaggle.com/datasets/meetnagadia/human-action-recognition-har-dataset) |
-| **Push-Up (LSTM)** | [Pushup Pose Detection](https://www.kaggle.com/datasets/mohamadashrafsalama/pushup) | **Zaman Serisi:** Şınav videolarından çıkarılmış eklem koordinatları. | [Kaggle](https://www.kaggle.com/datasets/mohamadashrafsalama/pushup) |
-| **Yoga Classification** | [Yoga Pose Classification](https://www.kaggle.com/datasets/ujjwalchowdhury/yoga-pose-classification) | **Görüntü:** 5 temel yoga pozunun sınıflandırılmış fotoğrafları. | [Kaggle](https://www.kaggle.com/datasets/ujjwalchowdhury/yoga-pose-classification) |
-| **Smart AI Coach** | [Exercise Recognition](https://www.kaggle.com/datasets/muhannadtuameh/exercise-recognition-time-series) | **Koordinat:** 33 farklı MediaPipe eklem noktasının hareket verisi. | [Kaggle](https://www.kaggle.com/datasets/muhannadtuameh/exercise-recognition-time-series) |
-| **Exercise Prediction** | [Multi-Class Exercise Poses](https://www.kaggle.com/datasets/dp5995/gym-exercise-mediapipe-33-landmarks) | **Tabular:** 10 egzersiz pozu (şınav, barfiks, mekik vb.) MediaPipe 33 landmark. | [Kaggle](https://www.kaggle.com/datasets/dp5995/gym-exercise-mediapipe-33-landmarks) |
+An **AI-powered real-time exercise recognition and analysis platform**.
+Using your camera, the system analyzes body movements instantly and detects different exercise types.
+
+### Current Features
+
+* **Exercise Recognition**
+  Automatically detects exercises such as **push-ups, sit-ups, squats, pull-ups, and jumping** using real-time camera input.
+
+### Planned Features (v2)
+
+* **Repetition Counting**
+  Automatically counts the number of repetitions for each detected exercise.
+
+* **Calorie Estimation**
+  Estimates the calories burned based on the **exercise type, duration, and repetition count**.
 
 ---
 
-## Demo
+# Approach
 
-**ActiMetric AI** -- Yapay zeka destekli gercek zamanli egzersiz takip uygulamasi Hugging Face Spaces uzerinde yayinda:
+The project is designed as a **single integrated system**.
 
-[**ActiMetric AI - Hugging Face Space**](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+To achieve this goal:
 
-| | |
-|:---:|:---:|
+* Projects that perform well in **sit-up detection**
+* Projects that perform well in **push-up detection**
+* Projects that perform well in **pull-up detection**
+* Projects that perform well in **general action recognition**
+
+were analyzed, their datasets were studied, and models were developed.
+
+These subprojects will eventually be **combined into a single unified system**.
+
+---
+
+# Kaggle Exercise & Computer Vision Dataset Summary
+
+| Topic                   | Competition / Dataset      | Data Content (Summary)                                                                        | Link   |
+| ----------------------- | -------------------------- | --------------------------------------------------------------------------------------------- | ------ |
+| **Calorie Expenditure** | Playground Series S5E5     | **Tabular:** Calorie estimation using pulse, duration, and body type data.                    | Kaggle |
+| **Facial Keypoints**    | Facial Keypoints Detection | **Image:** $(x, y)$ coordinates of 15 facial landmarks.                                       | Kaggle |
+| **Action Recognition**  | Human Action Recognition   | **Image:** 15 daily activity labels (running, walking, etc.).                                 | Kaggle |
+| **Push-Up (LSTM)**      | Pushup Pose Detection      | **Time Series:** Joint coordinates extracted from push-up videos.                             | Kaggle |
+| **Yoga Classification** | Yoga Pose Classification   | **Image:** Labeled images of 5 fundamental yoga poses.                                        | Kaggle |
+| **Smart AI Coach**      | Exercise Recognition       | **Coordinate Data:** Motion data of 33 MediaPipe body landmarks.                              | Kaggle |
+| **Exercise Prediction** | Multi-Class Exercise Poses | **Tabular:** 10 exercise poses (push-up, pull-up, sit-up, etc.) using MediaPipe 33 landmarks. | Kaggle |
+
+---
+
+# Demo
+
+**ActiMetric AI** — An AI-powered real-time exercise tracking application available on **Hugging Face Spaces**:
+
+**ActiMetric AI - Hugging Face Space**
+[https://huggingface.co/spaces/bagdatli/ActiMetric-AI](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+
+|                                     |                                               |
+| :---------------------------------: | :-------------------------------------------: |
 | ![Hero](assets/actimetric_hero.png) | ![Exercises](assets/actimetric_exercises.png) |
-| Modern UI - Hero Section | Desteklenen Egzersizler |
+|       Modern UI – Hero Section      |              Supported Exercises              |
 
 ---
 
-## Proje Yapisi
+# Project Structure
 
 ```
 NoPainNoGain/
 ├── CalorieExpenditurePrediction/
-├── ExercisePrediction/          -> github.com/ebagdatli/no-pain-no-gain
-│   ├── app/                # Yerel Streamlit UI
-│   ├── src/                # Model egitimi & kamera demo
+├── ExercisePrediction/          
+│   ├── app/                # Local Streamlit UI
+│   ├── src/                # Model training & camera demo
 │   ├── hf_space/           # Hugging Face Space deployment
-│   └── models/             # Egitilmis model dosyalari
+│   └── models/             # Trained model files
 ├── FacialKeypointsDetection/
 ├── HumanActionRecognition/
 ├── LSTMExerciseClassificationPushUp/
 ├── SmartAICoach/
 ├── Yoga Pose Classification/
-├── run_competition.py      # Alt projelerin notebook'larini calistirir
+├── run_competition.py      # Runs notebooks of the subprojects
 └── README.md
 ```
 
-> **ExercisePrediction** projesi bagimsiz bir repo olarak da gelistirilmektedir:
-> [github.com/ebagdatli/no-pain-no-gain](https://github.com/ebagdatli/no-pain-no-gain)
+> The **ExercisePrediction** project is also being developed as an independent repository:
+> [https://github.com/ebagdatli/no-pain-no-gain](https://github.com/ebagdatli/no-pain-no-gain)
 
+---
+* **Architecture diagram + model pipeline** ekleyebilirim
+* Bu projeyi **portfolio / CV için güçlü gösterecek README** hazırlayabilirim (çok fark yaratır).
