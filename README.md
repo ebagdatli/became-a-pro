@@ -61,13 +61,7 @@ These subprojects will eventually be **combined into a single unified system**.
 | **Exercise Prediction** | Multi-Class Exercise Poses | **Tabular:** 10 exercise poses (push-up, pull-up, sit-up, etc.) using MediaPipe 33 landmarks. | Kaggle |
 
 ---
-
-# Demo
-
-**ActiMetric AI** — An AI-powered real-time exercise tracking application available on **Hugging Face Spaces**:
-
-**ActiMetric AI - Hugging Face Space**
-[https://huggingface.co/spaces/bagdatli/ActiMetric-AI](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+### UI
 
 |                                     |                                               |
 | :---------------------------------: | :-------------------------------------------: |
