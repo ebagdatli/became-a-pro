@@ -73,7 +73,7 @@ These subprojects will eventually be **combined into a single unified system**.
 ## Folder Structure
 
 ```
-NoPainNoGain/
+BecameAPro/
 ├── CalorieExpenditurePrediction/
 ├── ExercisePrediction/          
 │   ├── app/                
