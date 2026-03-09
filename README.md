@@ -1,17 +1,10 @@
 # NoPainNoGain
 
-<p align="center">
-  <img src="assets/actimetric_hero.png" width="800" alt="Hero Banner">
-</p>
+### AI-Powered Real-Time Exercise Tracking Platform
 
-| 🌐 Live Deployment | 🤖 Model Status | ⚡ Latency |
-| :--- | :--- | :--- |
-| [**Try on Hugging Face Spaces**](https://huggingface.co/spaces/bagdatli/ActiMetric-AI) | `✅ Production Ready` | `~30ms (Real-time)` |
+[![Live Demo](https://img.shields.io/badge/DEMO-TRY%20IT%20NOW%20ON%20HUGGING%20FACE-orange?style=for-the-badge&logo=huggingface&logoColor=white)](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
 
----
-
-[![Python](https://img.shields.io/badge/Python-3.10+-3776ab?logo=python\&logoColor=white)](https://python.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.20+-ff4b4b?logo=streamlit\&logoColor=white)](https://streamlit.io)
+> **🚀 Instant Access:** No installation required. Click the banner above to test the real-time pose detection directly in your browser!
 
 ---
 
