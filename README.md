@@ -60,15 +60,6 @@ Using your camera, the system analyzes body movements instantly and detects diff
 
 ---
 
-## UI
-
-|                                     |                                               |
-| :---------------------------------: | :-------------------------------------------: |
-| ![Hero](assets/actimetric_hero.png) | ![Exercises](assets/actimetric_exercises.png) |
-|       Modern UI – Hero Section      |              Supported Exercises              |
-
----
-
 ## Folder Structure
 
 ```
