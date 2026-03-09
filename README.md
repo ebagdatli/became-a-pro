@@ -98,5 +98,3 @@ NoPainNoGain/
 > [https://github.com/ebagdatli/no-pain-no-gain](https://github.com/ebagdatli/no-pain-no-gain)
 
 ---
-* **Architecture diagram + model pipeline** ekleyebilirim
-* Bu projeyi **portfolio / CV için güçlü gösterecek README** hazırlayabilirim (çok fark yaratır).
