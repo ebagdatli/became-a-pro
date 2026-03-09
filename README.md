@@ -10,15 +10,6 @@ Aşağıda README dosyanın **doğal ve düzgün İngilizceye çevrilmiş hali**
 
 ---
 
-“About the Project” kısmında **v2 özelliklerini daha net ayırmak** için genelde README’lerde iki ayrı bölüm kullanılır:
-
-* **Current Features**
-* **Planned Features (v2)**
-
-Aşağıdaki gibi yazarsan hem daha profesyonel görünür hem de roadmap daha anlaşılır olur.
-
----
-
 ## About the Project
 
 An **AI-powered real-time exercise recognition and analysis platform**.
