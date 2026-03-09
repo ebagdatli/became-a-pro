@@ -6,6 +6,13 @@
 
 > **Live Demo:** [https://huggingface.co/spaces/bagdatli/ActiMetric-AI](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
 
+### AI-Powered Real-Time Exercise Tracking Platform
+
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-ActiMetric--AI-blue)](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776ab?logo=python&logoColor=white)](https://python.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.20+-ff4b4b?logo=streamlit&logoColor=white)](https://streamlit.io)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 ---
 
 ## About the Project
@@ -73,24 +80,73 @@ These subprojects will eventually be **combined into a single unified system**.
 
 ---
 
-# Project Structure
+## Model Pipeline
+
+Proje uctan uca bir ML pipeline'i izler. Her alt proje ayni yapiyi kullanir:
 
 ```
-NoPainNoGain/
-├── CalorieExpenditurePrediction/
-├── ExercisePrediction/          
-│   ├── app/                # Local Streamlit UI
-│   ├── src/                # Model training & camera demo
-│   ├── hf_space/           # Hugging Face Space deployment
-│   └── models/             # Trained model files
-├── FacialKeypointsDetection/
-├── HumanActionRecognition/
-├── LSTMExerciseClassificationPushUp/
-├── SmartAICoach/
-├── Yoga Pose Classification/
-├── run_competition.py      # Runs notebooks of the subprojects
-└── README.md
+                                    INFERENCE
+DATA                 TRAINING       (Real-time)
+ |                      |               |
+ v                      v               v
+┌──────────┐    ┌──────────────┐    ┌──────────────────┐
+│  Kaggle  │    │  Notebook    │    │  Streamlit UI    │
+│  Dataset │───>│  (main.ipynb)│───>│  + WebRTC Camera │
+└──────────┘    └──────┬───────┘    └────────┬─────────┘
+                       │                     │
+                       v                     v
+              ┌────────────────┐    ┌────────────────────┐
+              │  Feature Eng.  │    │  MediaPipe Pose    │
+              │  - MediaPipe   │    │  Landmark Detection│
+              │  - 33 Landmark │    │  (33 keypoints)    │
+              │  - x, y, z    │    └────────┬───────────┘
+              └────────┬───────┘             │
+                       │                     v
+                       v            ┌────────────────────┐
+              ┌────────────────┐    │  Preprocessing     │
+              │  Model Train   │    │  - Scaling (x100)  │
+              │  - XGBoost     │    │  - StandardScaler  │
+              │  - PyTorch     │    └────────┬───────────┘
+              │  - TensorFlow  │             │
+              └────────┬───────┘             v
+                       │            ┌────────────────────┐
+                       v            │  Classification    │
+              ┌────────────────┐    │  - 10 pose classes │
+              │  models/       │    │  - Smoothing buffer│
+              │  - model.pkl   │───>│  - Rep counting    │
+              │  - scaler.pkl  │    │  - Calorie est.    │
+              │  - encoder.pkl │    └────────────────────┘
+              └────────────────┘
 ```
+
+### Model Calistirma
+
+```bash
+# Tum pipeline'i bastan calistir (notebook uzerinden)
+python run_competition.py ExercisePrediction
+
+# Lokal kamera demo (OpenCV penceresi)
+cd ExercisePrediction
+python -m src.camera_demo
+
+# Streamlit web arayuzu (tarayici icinde WebRTC)
+cd ExercisePrediction
+streamlit run app/streamlit_app.py
+```
+
+---
+
+## Technologies Used
+
+### Core ML & AI
+
+| Teknoloji | Kullanim Alani |
+|-----------|---------------|
+| **MediaPipe** | Gercek zamanli 33 vucut noktasi (pose landmark) algilama |
+| **XGBoost** | Ana siniflandirma modeli (ExercisePrediction, SmartAICoach) |
+| **PyTorch** | Alternatif derin ogrenme modeli |
+| **TensorFlow / Keras** | CNN ve LSTM modelleri (HAR, Facial Keypoints, Push-up) |
+| **scikit-learn** | Onisleme, olcekleme, degerlendirme metrikleri |
 
 > The **ExercisePrediction** project is also being developed as an independent repository:
 > [https://github.com/ebagdatli/no-pain-no-gain](https://github.com/ebagdatli/no-pain-no-gain)
