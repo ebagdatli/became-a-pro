@@ -1,9 +1,26 @@
----
 # NoPainNoGain
 
 ### AI-Powered Real-Time Exercise Tracking Platform
 
-[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-ActiMetric--AI-blue)](https://huggingface.co/spaces/bagdatli/ActiMetric-AI)
+<p align="center">
+
+<a href="https://huggingface.co/spaces/bagdatli/ActiMetric-AI">
+<img src="https://img.shields.io/badge/🚀%20LIVE%20AI%20DEMO-Try%20on%20HuggingFace-ffcc00?style=for-the-badge"/>
+</a>
+
+<a href="https://huggingface.co/spaces/bagdatli/ActiMetric-AI">
+<img src="https://img.shields.io/badge/🤗%20HuggingFace%20Space-ActiMetric--AI-blue?style=for-the-badge&logo=huggingface"/>
+</a>
+
+</p>
+
+<p align="center">
+🧠 <b>Try the real-time AI exercise recognition directly in your browser</b><br>
+📷 Camera-based pose detection powered by MediaPipe and Machine Learning
+</p>
+
+---
+
 [![Python](https://img.shields.io/badge/Python-3.10+-3776ab?logo=python\&logoColor=white)](https://python.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.20+-ff4b4b?logo=streamlit\&logoColor=white)](https://streamlit.io)
 
@@ -43,7 +60,6 @@ To achieve this goal:
 were analyzed, their datasets were studied, and models were developed.
 
 These subprojects will eventually be **combined into a single unified system**.
-
 ---
 
 # Kaggle Exercise & Computer Vision Dataset Summary
