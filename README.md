@@ -1,5 +1,3 @@
-Aşağıda README dosyanın **doğal ve düzgün İngilizceye çevrilmiş hali** bulunuyor. Teknik README formatını ve GitHub stilini de korudum.
-
 ---
 
 # NoPainNoGain
