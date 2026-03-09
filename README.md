@@ -75,17 +75,17 @@ These subprojects will eventually be **combined into a single unified system**.
 ```
 NoPainNoGain/
 ├── CalorieExpenditurePrediction/
-├── ExercisePrediction/          -> github.com/ebagdatli/no-pain-no-gain
-│   ├── app/                # Yerel Streamlit UI
-│   ├── src/                # Model egitimi & kamera demo
+├── ExercisePrediction/          
+│   ├── app/                
+│   ├── src/                
 │   ├── hf_space/           # Hugging Face Space deployment
-│   └── models/             # Egitilmis model dosyalari
+│   └── models/             
 ├── FacialKeypointsDetection/
 ├── HumanActionRecognition/
 ├── LSTMExerciseClassificationPushUp/
 ├── SmartAICoach/
 ├── Yoga Pose Classification/
-├── run_competition.py      # Alt projelerin notebook'larini calistirir
+├── run_competition.py     
 └── README.md
 ```
 
