@@ -74,25 +74,20 @@ These subprojects will eventually be **combined into a single unified system**.
 ## Folder Structure
 
 ```
-BecomeAPro/
-├── ExercisePrediction/              # Ana egzersiz tanimlama projesi
-│   ├── app/
-│   │   └── streamlit_app.py         # Lokal Streamlit UI (WebRTC kamera)
-│   ├── src/
-│   │   ├── camera_demo.py           # OpenCV kamera demo
-│   │   ├── data_loader.py           # Veri yukleme
-│   │   ├── preprocessing.py         # Onisleme pipeline
-│   │   ├── train.py                 # Model egitimi
-│   │   └── predict.py               # Tahmin fonksiyonlari
-│   ├── hf_space/                    # HuggingFace Space deployment
-│   │   ├── app.py                   # WebRTC + Streamlit
-│   │   ├── Dockerfile
-│   │   └── requirements.txt
-│   ├── notebooks/
-│   │   └── main.ipynb               # Ana egitim pipeline
-│   ├── models/                      # Egitilmis modeller
-│   ├── data/                        # Veri setleri
-│   └── requirements.txt
+NoPainNoGain/
+├── CalorieExpenditurePrediction/
+├── ExercisePrediction/          -> github.com/ebagdatli/no-pain-no-gain
+│   ├── app/                # Yerel Streamlit UI
+│   ├── src/                # Model egitimi & kamera demo
+│   ├── hf_space/           # Hugging Face Space deployment
+│   └── models/             # Egitilmis model dosyalari
+├── FacialKeypointsDetection/
+├── HumanActionRecognition/
+├── LSTMExerciseClassificationPushUp/
+├── SmartAICoach/
+├── Yoga Pose Classification/
+├── run_competition.py      # Alt projelerin notebook'larini calistirir
+└── README.md
 ```
 
 ### Model Run
