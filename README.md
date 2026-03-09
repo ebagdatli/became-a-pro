@@ -138,11 +138,11 @@ streamlit run app/streamlit_app.py
 
 | Teknoloji | Kullanim Alani |
 |-----------|---------------|
-| **MediaPipe** | Gercek zamanli 33 vucut noktasi (pose landmark) algilama |
-| **XGBoost** | Ana siniflandirma modeli (ExercisePrediction, SmartAICoach) |
-| **PyTorch** | Alternatif derin ogrenme modeli |
-| **TensorFlow / Keras** | CNN ve LSTM modelleri (HAR, Facial Keypoints, Push-up) |
-| **scikit-learn** | Onisleme, olcekleme, degerlendirme metrikleri |
+| **MediaPipe** | 
+| **XGBoost** |
+| **PyTorch** |
+| **TensorFlow / Keras** | 
+| **scikit-learn** | 
 
 > The **ExercisePrediction** project is also being developed as an independent repository:
 > [https://github.com/ebagdatli/no-pain-no-gain](https://github.com/ebagdatli/no-pain-no-gain)
