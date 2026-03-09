@@ -70,46 +70,32 @@ These subprojects will eventually be **combined into a single unified system**.
 
 ---
 
-## Model Pipeline
-
-Proje uctan uca bir ML pipeline'i izler. Her alt proje ayni yapiyi kullanir:
+```
+## Folder Structure
 
 ```
-                                    INFERENCE
-DATA                 TRAINING       (Real-time)
- |                      |               |
- v                      v               v
-┌──────────┐    ┌──────────────┐    ┌──────────────────┐
-│  Kaggle  │    │  Notebook    │    │  Streamlit UI    │
-│  Dataset │───>│  (main.ipynb)│───>│  + WebRTC Camera │
-└──────────┘    └──────┬───────┘    └────────┬─────────┘
-                       │                     │
-                       v                     v
-              ┌────────────────┐    ┌────────────────────┐
-              │  Feature Eng.  │    │  MediaPipe Pose    │
-              │  - MediaPipe   │    │  Landmark Detection│
-              │  - 33 Landmark │    │  (33 keypoints)    │
-              │  - x, y, z    │    └────────┬───────────┘
-              └────────┬───────┘             │
-                       │                     v
-                       v            ┌────────────────────┐
-              ┌────────────────┐    │  Preprocessing     │
-              │  Model Train   │    │  - Scaling (x100)  │
-              │  - XGBoost     │    │  - StandardScaler  │
-              │  - PyTorch     │    └────────┬───────────┘
-              │  - TensorFlow  │             │
-              └────────┬───────┘             v
-                       │            ┌────────────────────┐
-                       v            │  Classification    │
-              ┌────────────────┐    │  - 10 pose classes │
-              │  models/       │    │  - Smoothing buffer│
-              │  - model.pkl   │───>│  - Rep counting    │
-              │  - scaler.pkl  │    │  - Calorie est.    │
-              │  - encoder.pkl │    └────────────────────┘
-              └────────────────┘
+BecomeAPro/
+├── ExercisePrediction/              # Ana egzersiz tanimlama projesi
+│   ├── app/
+│   │   └── streamlit_app.py         # Lokal Streamlit UI (WebRTC kamera)
+│   ├── src/
+│   │   ├── camera_demo.py           # OpenCV kamera demo
+│   │   ├── data_loader.py           # Veri yukleme
+│   │   ├── preprocessing.py         # Onisleme pipeline
+│   │   ├── train.py                 # Model egitimi
+│   │   └── predict.py               # Tahmin fonksiyonlari
+│   ├── hf_space/                    # HuggingFace Space deployment
+│   │   ├── app.py                   # WebRTC + Streamlit
+│   │   ├── Dockerfile
+│   │   └── requirements.txt
+│   ├── notebooks/
+│   │   └── main.ipynb               # Ana egitim pipeline
+│   ├── models/                      # Egitilmis modeller
+│   ├── data/                        # Veri setleri
+│   └── requirements.txt
 ```
 
-### Model Calistirma
+### Model Run
 
 ```bash
 # Tum pipeline'i bastan calistir (notebook uzerinden)
